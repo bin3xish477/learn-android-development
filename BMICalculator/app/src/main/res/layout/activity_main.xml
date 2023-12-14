@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    >
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:contentDescription="homeImage"
+        android:src="@drawable/scale"
+        />
+
+    <TextView
+        android:layout_marginVertical="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BMI Calculator"
+        />
+
+    <RadioGroup
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/radio_button_male"
+            android:layout_marginRight="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Male"
+            />
+        <RadioButton
+            android:id="@+id/radio_button_female"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Female"
+            />
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/edit_text_age"
+        android:inputType="number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Age"
+        />
+    <LinearLayout
+        android:layout_margin="5dp"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        >
+        <EditText
+            android:id="@+id/edit_text_feet"
+            android:inputType="number"
+            android:layout_marginRight="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Feet"
+            />
+        <EditText
+            android:id="@+id/edit_text_inches"
+            android:inputType="number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Inches"
+            />
+    </LinearLayout>
+    <EditText
+        android:id="@+id/edit_text_weight"
+        android:layout_marginBottom="8dp"
+        android:inputType="number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Weight"
+        />
+
+    <Button
+        android:id="@+id/button_calculate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calculate"
+        />
+
+    <TextView
+        android:id="@+id/text_view_result"
+        android:layout_margin="22dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="23.6 - You're a healthy weight!"
+        />
+</LinearLayout>
