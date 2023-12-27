@@ -1,4 +1,4 @@
-package com.bin3xish477.localauth
+package com.example.localauth
 
 import android.content.Intent
 import android.os.Bundle
@@ -15,6 +15,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val MAX_LOGIN_ATTEMPTS: Int = 3
+        // used just for this example, otherwise, we have an infinite loop.
+        var isLoggedIn: Boolean = false
     }
 
     private lateinit var executor: Executor
@@ -26,15 +28,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (this.isBiometricAuthAvailable()) {
-            this.handleBiometricAuth()
-        } else {
-            Log.d(
-                "MainActivity",
-                "Closing MainActivity because biometric authentication is unavailable."
-            )
-            this.showToast("Biometric authentication is unavailable.")
-            finish()
+        if (!isLoggedIn) {
+            if (this.isBiometricAuthAvailable()) {
+                this.handleBiometricAuth()
+            } else {
+                Log.d(
+                    "MainActivity",
+                    "Closing MainActivity because biometric authentication is unavailable."
+                )
+                this.showToast("Biometric authentication is unavailable.")
+                finish()
+            }
         }
     }
 
@@ -67,6 +71,7 @@ class MainActivity : AppCompatActivity() {
                         super.onAuthenticationSucceeded(result)
                         Log.d("MainActivity", "Biometric authentication was successful.")
                         this@MainActivity.showToast("Biometric authentication was successful.")
+                        isLoggedIn = true
                         this@MainActivity.startMainAfterAuthSuccess()
                     }
 
