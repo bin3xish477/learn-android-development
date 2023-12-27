@@ -1,7 +1,10 @@
-package com.example.localauth
+package com.bin3xish477.localauth
 
 import android.content.Intent
 import android.os.Bundle
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -9,24 +12,34 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import com.bin3xish477.localauth.databinding.ActivityMainBinding
+import java.security.KeyStore
+import java.util.UUID
 import java.util.concurrent.Executor
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
+        const val KEY_NAME = "TokenKey"
         const val MAX_LOGIN_ATTEMPTS: Int = 3
+
         // used just for this example, otherwise, we have an infinite loop.
         var isLoggedIn: Boolean = false
+        lateinit var encryptedUserToken: String
     }
 
     private lateinit var executor: Executor
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
+    private lateinit var binding: ActivityMainBinding
     private var biometricLoginAttempts: Int = 1
+    private var userUuidToken: String = getUuid()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
         if (!isLoggedIn) {
             if (this.isBiometricAuthAvailable()) {
@@ -39,6 +52,10 @@ class MainActivity : AppCompatActivity() {
                 this.showToast("Biometric authentication is unavailable.")
                 finish()
             }
+        } else {
+            this.binding = ActivityMainBinding.inflate(layoutInflater)
+            this.binding.userToken.text = "SessionToken = $encryptedUserToken"
+            setContentView(this.binding.root)
         }
     }
 
@@ -72,6 +89,18 @@ class MainActivity : AppCompatActivity() {
                         Log.d("MainActivity", "Biometric authentication was successful.")
                         this@MainActivity.showToast("Biometric authentication was successful.")
                         isLoggedIn = true
+                        Log.d("MainActivity", "Encrypting user UUID($userUuidToken)")
+                        val cipher = result.cryptoObject?.cipher
+                        if (cipher != null) {
+                            val encryptedUuidToken =
+                                cipher.doFinal(userUuidToken.toByteArray(Charsets.UTF_8))
+                            if (encryptedUuidToken != null) {
+                                encryptedUserToken = Base64.encodeToString(encryptedUuidToken, Base64.DEFAULT)
+                            }
+                        }
+                        Log.d(
+                            "MainActivity", "Encrypted user UUID: $encryptedUserToken"
+                        )
                         this@MainActivity.startMainAfterAuthSuccess()
                     }
 
@@ -108,7 +137,21 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButtonText("Use account password.")
                 .build()
 
-            biometricPrompt.authenticate(promptInfo)
+            this.generateSecretKey(
+                KeyGenParameterSpec.Builder(
+                    KEY_NAME,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .setUserAuthenticationRequired(true)
+                    .setInvalidatedByBiometricEnrollment(true)
+                    .build()
+            )
+            val key = this.getKey()
+            val cipher = this.getCipher()
+            cipher.init(Cipher.ENCRYPT_MODE, key)
+            biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
         }
     }
 
@@ -121,5 +164,30 @@ class MainActivity : AppCompatActivity() {
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
         finish()
+    }
+
+    private fun generateSecretKey(keySpec: KeyGenParameterSpec) {
+        val generator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore"
+        )
+        generator.init(keySpec)
+        generator.generateKey()
+    }
+
+    private fun getKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply {
+            load(null)
+        }
+        return keyStore.getKey(KEY_NAME, null) as SecretKey
+    }
+
+    private fun getCipher(): Cipher {
+        return Cipher.getInstance(
+            "${KeyProperties.KEY_ALGORITHM_AES}/${KeyProperties.BLOCK_MODE_CBC}/${KeyProperties.ENCRYPTION_PADDING_PKCS7}"
+        )
+    }
+
+    private fun getUuid(): String {
+        return UUID.randomUUID().toString()
     }
 }
